@@ -1,0 +1,23 @@
+#summary How to install Vektornye from source.
+#labels Phase-Deploy
+
+= Download =
+In order to download Vektornye, you will need a Subversion client.
+
+Links to the SVN repository can be found on the Source page of this site.
+
+= Server =
+Your server must be configured to serve files with the correct MIME type:
+{{{Content-Type: image/svg+xml}}}
+
+Optionally, you may set your server to use 'index.svg' as an index file.
+
+= Installation =
+Sylvester is a matrix math library for JavaScript, and is important for doing on-the-fly transformations of coordinates in SVG path data. It can be found here: http://sylvester.jcoglan.com/
+
+Edit the second script dependency in index.svg to point to Sylvester.
+
+Point your browser to the file's location, and load it on up.
+
+= Compatibility =
+For the time being, only Mozilla Firefox 3 is supported. This is because the game will only be distributed using the Mozilla Prism site-specific browser.
