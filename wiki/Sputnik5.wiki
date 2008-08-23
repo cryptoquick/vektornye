@@ -2,12 +2,14 @@
 #labels Phase-Design
 
 = Tasks =
-  * Make sure a new block isn't given if an block that's already placed is moved
-  * Fix or remove stack-moving
-  * Run Init() on window resize
-  * Solve the z-index issue
-  * Replace gradients with a diagonal GUI, alongside the grid
-  * Colored blocks on the GUI, light & dark of each (Red, Orange, Yellow, Green, Blue, Indigo, Violet) + (White, Light Gray, Dark Gray, Black)
-  * Block removal & garbage collection
-  * Improve debug function to scroll and display status messages throughout different functions of the client
-  * Clean up code to better allow extension and future improvement
+  # Make sure a new block isn't given if an block that's already placed is moved
+  # Fix or remove stack-moving
+  # Run reposition grid on window resize
+  # Solve the z-index issue; due to the painters algorithm used by SVG, we need to redraw the adjacent node
+  # Replace gradients with a diagonal GUI, alongside the grid
+  # Colored blocks on the GUI, light & dark of each (Red, Orange, Yellow, Green, Blue, Indigo, Violet) + (White, Light Gray, Dark Gray, Black)
+  # Block removal & garbage collection
+  # _Improve debug function to scroll and display status messages throughout different functions of the client-- an event log._
+  # Clean up code to better allow extension and future improvement
+  # Keep blocks from occupying the same space, either on the grid or when stacked
+  # Allow block lines to be selected as well
