@@ -1,5 +1,5 @@
 #summary How to install Vektornye from source.
-#labels Phase-Deploy
+#labels Phase-Deploy,Featured
 
 = Download =
 In order to download Vektornye, you will need a Subversion client.
@@ -20,4 +20,4 @@ Edit the second script dependency in index.svg to point to Sylvester.
 Point your browser to the file's location, and load it on up.
 
 = Compatibility =
-For the time being, only Mozilla Firefox 3 is supported. This is because the game will only be distributed using the Mozilla Prism site-specific browser.
+Vektornye is tested on Firefox 3, Safari 3, and Opera 9.5 before uploaded to the repository.
