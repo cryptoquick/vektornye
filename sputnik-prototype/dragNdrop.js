@@ -24,16 +24,29 @@
 
 var SVGDocument = null;
 var SVGRoot = document.rootElement;
+var svgNS = 'http://www.w3.org/2000/svg';
 
 var TrueCoords = null;
 var GrabPoint = null;
 var BackDrop = null;
 var DragTarget = null;
 
+var grid_x = 15;
+var grid_y = 15;
+
+// Field is short for Playfield, and each element contains 5 values; X, Y, Z, color, and functionality.
+var Field = new Object();
+Field.length = 0;
+
+function transformGrid() {
+	// Make the grid (x,y) by getting the width & height of the root SVG element
+	gridTransform(grid_x, grid_y, window.innerWidth, window.innerHeight);
+}
+
+
 function Init(evt)
 {
-	// Make the grid (x,y) by getting the width & height of the root SVG element
-	gridTransform(15, 15, SVGRoot.getBBox().width, SVGRoot.getBBox().height);
+	transformGrid();
 	
 	// Create a new block based on the template (hidden outside of the screen)
 	randoBlock();
@@ -48,6 +61,15 @@ function Init(evt)
 	//    (instead of the dragged element) prevents the dragged element
 	//    from being inadvertantly dropped when the mouse is moved rapidly
 	BackDrop = document.getElementById('BackDrop');
+	
+	loggit('Program initialized.');
+}
+
+window.onresize = function() {
+	loggit('Resolution change detected-- recalculating grid positions.');
+	gridparent = document.getElementById('gridContainer');
+	gridparent.removeChild(gridparent.childNodes[1]);
+	transformGrid();
 }
 
 function Grab(evt) {
@@ -60,16 +82,19 @@ function Grab(evt) {
 		var nFZ = 'bla';
 	}
 	
+	// See if the currently moused block is present in Field
+	/*
+	for (x = 0; x <= (Field.length - 1); x++) {
+		targetElement.parentNode.id.substr(7, 10)
+	}
+	*/
 	// you cannot drag the background itself, so ignore any attempts to mouse down on it
 	// Make sure the element is not in the noFlyZone
 	// Took this out, forgot why it was there...  || targetElement == SVGRoot.target
 	// We might want to reverse that to make only flying objects fly, rather than making non-flying object not fly, like we do now.
 	// if (BackDrop != targetElement && nFZ != 'nFZ')
 	if (targetElement.parentNode.id.substr(0,5) == 'block')
-	{
-		// testing zone
-			//alert(targetElement.getAttribute('id').substr(0,3));
-		
+	{		
 		//set the item moused down on as the element to be dragged
 		DragTarget = targetElement.parentNode;
 
@@ -127,52 +152,63 @@ function Drop(evt)
 		
 		// turn the pointer-events back on, so we can grab this item later
 		DragTarget.setAttributeNS(null, 'pointer-events', 'all');
-		if ( 'gridTransform' == targetElement.parentNode.parentNode.id )
-		{
+		
+		// Number ID of the grid element
+		gridnum = targetElement.id.substr(7, 10);
+		// Get the color of the block
+		blockcolor = DragTarget.childNodes[1].getAttribute('fill');
+		
+		// Find grid coordinates
+		coor_x = Math.floor(gridnum / grid_x);
+		coor_y = gridnum % grid_y;
+		
+		blockattrs = new Array(coor_x, coor_y, 0, blockcolor, 's');
+		
+		// Register the block with the Field
+		Field[gridnum] = blockattrs; // 's' functionality stands for 'structural'
+		Field.length++;
+		// loggit(Field.length);
+		// Log the block's position.
+		if(isNaN(coor_x)) {
+			loggit('Object placed offgrid.');
+		} else {
+			loggit('Object placed at ' + coor_x + ', ' + coor_y + '.');
+		}
+		
+		// GRID PLACEMENT // If the object is placed directly on the grid...
+		if ( 'gridTransform' == targetElement.parentNode.id )
+		{			
 			// if the dragged element is dropped on an element that is a child
 			//    of the folder group, it is inserted as a child of that group
-			targetElement.parentNode.appendChild( DragTarget );
-			//DragTarget.setAttributeNS(null, 'transform', 'translate(' + newX + ',' + newY + ')' + 'scale(0.5)');
-			//targetElement.setAttributeNS(null, 'stroke-width', '5');
-			//targetElement.setAttributeNS(null, 'fill', '#fff');
+			targetElement.parentNode.appendChild( DragTarget );			
+
+			// Snap object to grid, but if the element is behind another, render the one in front first
 			bbox = targetElement.getBBox();
-			// Snap object to grid
-			DragTarget.setAttributeNS(null, 'transform', 'translate(' + (bbox.x + 5) + ',' + (bbox.y - 27) + ')');
-						
-			// Set DebugGrid to the new color
-			gridnum = targetElement.id.substr(7, 10);
-			blockcolor = DragTarget.childNodes[1].getAttribute('fill');
-			document.getElementById('debugGrid-' + gridnum).setAttributeNS(null, 'fill', blockcolor);
-			
+			//if( != null) {
+				DragTarget.setAttributeNS(null, 'transform', 'translate(' + (bbox.x + 5) + ',' + (bbox.y - 27) + ')');
+			//	alert('behind an object');
+			//else {
+			//	DragTarget.setAttributeNS(null, 'transform', 'translate(' + (bbox.x + 5) + ',' + (bbox.y - 27) + ')');
+			//}
+
 			// Give us a new block.
 			randoBlock();
-
-			//alert(DragTarget.id + ' has been dropped into a folder, and has been inserted as a child of the containing group.');
 		}
-		// If dragged onto the top of another block
+		
+		// STACKING // ...or if dragged onto the top of another block
 		else if ( targetElement.id == 'outline' )
 		{
 			// if the dragged element is dropped on an element that is a child
 			//    of the folder group, it is inserted as a child of that group
 			targetElement.parentNode.appendChild( DragTarget );
-			//DragTarget.setAttributeNS(null, 'transform', 'translate(' + newX + ',' + newY + ')' + 'scale(0.5)');
-			//targetElement.setAttributeNS(null, 'stroke-width', '5');
-			//targetElement.setAttributeNS(null, 'fill', '#fff');
+
 			bbox = targetElement.getBBox();
 			// Snap object to grid
 			DragTarget.setAttributeNS(null, 'transform', 'translate(' + (bbox.x - 1) + ',' + (bbox.y - 34) + ')');
-						
-			// Set DebugGrid to the new color
-			//gridnum = targetElement.parentNode.id.substr(7, 10);
-			//blockcolor = DragTarget.childNodes[1].getAttribute('fill');
-			//document.getElementById('debugGrid-' + gridnum).setAttributeNS(null, 'fill', blockcolor);
+
 			// Give us a new block.
 			randoBlock();
-
-			//alert(DragTarget.id + ' has been dropped into a folder, and has been inserted as a child of the containing group.');
-		}
-		else
-		{
+		} else {
 			// for this example, you cannot drag an item out of the folder once it's in there;
 			//    however, you could just as easily do so here
 			//alert(DragTarget.id + ' has been dropped on top of ' + targetElement.id);

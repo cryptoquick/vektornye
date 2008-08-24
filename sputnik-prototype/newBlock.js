@@ -44,7 +44,7 @@ function assignCol(blockId) {
 	colorLeft = "rgb(" + colorR + "," + colorG + "," + colorB + ")";
 	colorRight = "rgb(" + (colorR + 20) + "," + (colorG + 20) + "," + (colorB + 20) + ")";
 	colorTop = "rgb(" + (colorR + 40) + "," + (colorG + 40) + "," + (colorB + 40) + ")";
-	colorLines = "rgb(" + (colorR + 60) + "," + (colorG + 60) + "," + (colorB + 60) + ")";
+	colorLines = "rgb(" + (colorR + 50) + "," + (colorG + 50) + "," + (colorB + 50) + ")";
 	document.getElementById("block" + blockId).childNodes[1].setAttribute("fill", colorLeft);
 	document.getElementById("block" + blockId).childNodes[3].setAttribute("fill", colorRight);
 	document.getElementById("block" + blockId).childNodes[5].setAttribute("fill", colorTop);
