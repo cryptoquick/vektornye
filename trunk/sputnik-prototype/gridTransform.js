@@ -24,15 +24,19 @@
 //	grid. There's also code here to place SVG code into the DOM, as well as some other
 //	debugging functionality.
 
+
+svgNS = 'http://www.w3.org/2000/svg';
+
 // Turns a string into something DOM can understand
 function parseSVG(str) {
   str = '<g xmlns="http://www.w3.org/2000/svg">' + str + '</g>';
   return new DOMParser().parseFromString(str, "text/xml").childNodes[0];
 }
 
-function parseSVGText(str) {
-  str = '<text xmlns="http://www.w3.org/2000/svg" id="debugText" x="220" y="30" font-family="Verdana" font-size="12" fill="black">' + str + '</text>';
-  return new DOMParser().parseFromString(str, "text/xml").childNodes[0];
+function parseXML (doc, str) {
+	doc2 = (new DOMParser()).parseFromString(str, "text/xml");
+	//doc.importNode(doc2, true);
+	return doc2.firstChild;
 }
 
 function gridTransform(grid_x, grid_y, screen_x, screen_y) {
@@ -46,6 +50,7 @@ function gridTransform(grid_x, grid_y, screen_x, screen_y) {
 	var mid_y = Math.floor((screen_y / 2));
 	var offset_x = mid_x;
 	var offset_y = mid_y;
+	var UIbar = 3;
 	var M1 = [];
 	var z = 0;
 		
@@ -82,95 +87,41 @@ function gridTransform(grid_x, grid_y, screen_x, screen_y) {
 	// This applies the angle and the scale to the 2D grid to make it into 2.5D isometric
 	M2 = Matrix.Rotation(angle);
 	M2 = M2.x(M25);
-		
-	var path = "";
+	
+//	<g id="gridTransform" fill="#DDD" stroke="#777" stroke-width="1">
+	gridGroup = document.createElementNS(svgNS, 'g');
+	gridGroup.setAttributeNS(null, 'id', 'gridTransform');
+	gridGroup.setAttributeNS(null, 'fill', '#DDD');
+	gridGroup.setAttributeNS(null, 'stroke', '#777');
+	gridGroup.setAttributeNS(null, 'stroke-width', '1');
 	
 	// Create string formatted for SVG paths, thus making squares
 	for (i= 0; i <= (grid_x * grid_y - 1); i++) {
 		var M = M1[i].x(M2); // Rotate & Squash
 		N = M.round(); // Whole numbers
 		N = N.add(M26); // Translate coordinates
-		path += "<path id=\"bgGrid-" + i + "\" d=\"";
+		
+		pathElement = document.createElementNS(svgNS, 'path');
+		pathElement.setAttributeNS(null, 'id', 'bgGrid-' + i);
+		
+		path = '';
 		path += 'M ' + N.e(1,1) + ' ' + N.e(1,2);
 		path += ' L ' + N.e(2,1) + ' ' + N.e(2,2);
 		path += ' L ' + N.e(3,1) + ' ' + N.e(3,2);
 		path += ' L ' + N.e(4,1) + ' ' + N.e(4,2);
-		path += " z\" />\n";
+		path += ' z';
+		
+		pathElement.setAttributeNS(null, 'd', path);
+		gridGroup.appendChild(pathElement);
 	}
 	
-	var M3 = $M([
-		[0,0],
-		[(size_x * grid_x),0],
-		[(size_x * grid_x),(size_y * grid_y)],
-		[0,(size_y * grid_y)]
-	]);
-	
-	// Create grid shadow
-	M = M3.x(M2); // Rotate & Squash over each iteration
-	N = M.round(); // Whole numbers
-	N = N.add(M26); // Translate coordinates
-	path += "<path id=\"bgGridShadowLeft\" fill=\"url(#GrisGradLeft)\" stroke=\"none\" stroke-width=\"0\" d=\"";
-	path += 'M ' + N.e(1,1) + ' ' + N.e(1,2);
-	path += ' L ' + N.e(4,1) + ' ' + N.e(4,2);
-	path += ' L ' + N.e(4,1) + ' ' + (N.e(4,2) + 35);
-	path += 'L ' + N.e(1,1) + ' ' + (N.e(1,2) + 35);
-	path += " z\" />\n";
-	
-	path += "<path id=\"bgGridShadowRight\" fill=\"url(#GrisGradRight)\" stroke=\"none\" stroke-width=\"0\" d=\"";
-	path += 'M ' + N.e(3,1) + ' ' + N.e(3,2);
-	path += ' L ' + N.e(4,1) + ' ' + N.e(4,2);
-	path += ' L ' + N.e(4,1) + ' ' + (N.e(4,2) + 35);
-	path += 'L ' + N.e(3,1) + ' ' + (N.e(3,2) + 35);
-	path += " z\" />\n";
-	
-	// Add string object into SVG DOM
-	function $(x) { return document.getElementById(x); }
-	$("gridTransform").appendChild(parseSVG(path));
+	gridparent = document.getElementById('gridContainer');
+	gridparent.appendChild(gridGroup);
 
-	var debug = "";
-	
-		// Scale y-axis by half
-	var M45 = $M([
-		[0.25,0],
-		[0,0.25]
-	]);
-	
-	// Translates across screen
-	var M46 = $M([
-		[215, 95],
-		[215, 95],
-		[215, 95],
-		[215, 95]
-	]);
-
-	// This applies the angle and the scale to the 2D grid to make it into 2.5D isometric
-	//M4 = Matrix.Rotation(angle);
-	//M4 = M4.x(M45);
-
-	//alert(M4.inspect());
-
-	// Build Debug Grid
-	for (i= 0; i <= (grid_x * grid_y - 1); i++) {
-		M = M1[i].x(M45); // Iterate
-		N = M.round(); // Whole numbers
-		N = N.add(M46); // Translate coordinates
-		debug += "<path id=\"debugGrid-" + i + "\" d=\"";
-		debug += 'M ' + N.e(1,1) + ' ' + N.e(1,2);
-		debug += ' L ' + N.e(2,1) + ' ' + N.e(2,2);
-		debug += ' L ' + N.e(3,1) + ' ' + N.e(3,2);
-		debug += ' L ' + N.e(4,1) + ' ' + N.e(4,2);
-		debug += " z\" />\n";
-	}
-	
-	// Add string object into SVG DOM
-	function $(x) { return document.getElementById(x); }
-	$("debugGrid").appendChild(parseSVG(debug));
-	
 	// End Timer
 	end = new Date();
 	
 	// Add timer and resolution info to Debug Box
-	document.getElementById("debugText").appendChild(parseSVGText("<tspan x=\"220\">Debug:</tspan>" +
-	"<tspan x=\"220\" dy=\"20\">Grid Transform took " + (end - start) + " milliseconds to render.</tspan>" + 
-	"<tspan x=\"220\" dy=\"20\">Available size: " + (screen_x - 75) + " pixels by " + (screen_y - 75) + " pixels.</tspan>"));
+	loggit("Grid Transform took " + (end - start) + " milliseconds to render.");
+	loggit("Available screen: " + screen_x + " pixels by " + screen_y + " pixels.");
 }
