@@ -1,5 +1,5 @@
 #summary Vektornye is an engine of many ambitions.
-#labels Phase-Design
+#labels Phase-Design,Featured
 
 = Sputnik - Experimental-series =
 The Sputnik-series is a series of experiments, as well as incremental improvements, pushing the boundaries and exploring new territory with each iteration of the program. 
