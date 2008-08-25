@@ -31,8 +31,10 @@ var GrabPoint = null;
 var BackDrop = null;
 var DragTarget = null;
 
-var grid_x = 15;
-var grid_y = 15;
+var grid_x = 16;
+var grid_y = 16;
+
+var initialized = false;
 
 // Field is short for Playfield, and each element contains 5 values; X, Y, Z, color, and functionality.
 var Field = new Object();
@@ -49,7 +51,7 @@ function Init(evt)
 	transformGrid();
 	
 	// Create a new block based on the template (hidden outside of the screen)
-	randoBlock();
+	//SVGRoot.appendChild(block(100, 100, 'random'));
 	
 	// these svg points hold x and y values...
 	//    very handy, but they do not display on the screen (just so you know)
@@ -62,14 +64,16 @@ function Init(evt)
 	//    from being inadvertantly dropped when the mouse is moved rapidly
 	BackDrop = document.getElementById('BackDrop');
 	
+	populatePalette();
+	
 	loggit('Program initialized.');
+	initialized = true;
 }
 
 window.onresize = function() {
-	loggit('Resolution change detected-- recalculating grid positions.');
-	gridparent = document.getElementById('gridContainer');
-	gridparent.removeChild(gridparent.childNodes[1]);
-	transformGrid();
+	if(initialized) {
+		loggit('Resolution change detected-- please refresh your browser for best results.');
+	}
 }
 
 function Grab(evt) {
@@ -98,15 +102,15 @@ function Grab(evt) {
 		//set the item moused down on as the element to be dragged
 		DragTarget = targetElement.parentNode;
 
-		// move this element to the "top" of the display, so it is (almost)
-		//    always over other elements (exception: in this case, elements that are
-		//    "in the folder" (children of the folder group) with only maintain
-		//    hierarchy within that group
-		DragTarget.parentNode.appendChild( DragTarget );
+		// Attach to SVGRoot so, it appears over everything else when dragged.
+		SVGRoot.appendChild(DragTarget);
+		
 		// turn off all pointer events to the dragged element, this does 2 things:
 		//    1) allows us to drag text elements without selecting the text
 		//    2) allows us to find out where the dragged element is dropped (see Drop)
 		DragTarget.setAttributeNS(null, 'pointer-events', 'none');
+		
+		replaceBlock = true;
 		
 		// we need to find the current position and translation of the grabbed element,
 		//    so that we only apply the differential between the current location
@@ -156,24 +160,23 @@ function Drop(evt)
 		// Number ID of the grid element
 		gridnum = targetElement.id.substr(7, 10);
 		// Get the color of the block
-		blockcolor = DragTarget.childNodes[1].getAttribute('fill');
+		//blockcolor = DragTarget.childNodes[1].getAttribute('fill');
+		blockcolor = DragTarget.getAttributeNS(null, 'block-color');
 		
 		// Find grid coordinates
-		coor_x = Math.floor(gridnum / grid_x);
-		coor_y = gridnum % grid_y;
+		coor_x = Math.floor(gridnum / 16); // grid_x & grix_y are being changed somewhere along the road...
+		coor_y = gridnum % 16;
 		
-		blockattrs = new Array(coor_x, coor_y, 0, blockcolor, 's');
+		if(blockcolor == 'clear'){
+			blockattrs = new Array(DragTarget.id, coor_x, coor_y, 0, blockcolor, 'v');
+		} else {
+			blockattrs = new Array(DragTarget.id, coor_x, coor_y, 0, blockcolor, 's');
+		}
 		
 		// Register the block with the Field
-		Field[gridnum] = blockattrs; // 's' functionality stands for 'structural'
+		Field[DragTarget.id] = blockattrs; // 's' functionality stands for 'structural'
 		Field.length++;
 		// loggit(Field.length);
-		// Log the block's position.
-		if(isNaN(coor_x)) {
-			loggit('Object placed offgrid.');
-		} else {
-			loggit('Object placed at ' + coor_x + ', ' + coor_y + '.');
-		}
 		
 		// GRID PLACEMENT // If the object is placed directly on the grid...
 		if ( 'gridTransform' == targetElement.parentNode.id )
@@ -184,20 +187,12 @@ function Drop(evt)
 
 			// Snap object to grid, but if the element is behind another, render the one in front first
 			bbox = targetElement.getBBox();
-			//if( != null) {
-				DragTarget.setAttributeNS(null, 'transform', 'translate(' + (bbox.x + 5) + ',' + (bbox.y - 27) + ')');
-			//	alert('behind an object');
-			//else {
-			//	DragTarget.setAttributeNS(null, 'transform', 'translate(' + (bbox.x + 5) + ',' + (bbox.y - 27) + ')');
-			//}
-
-			// Give us a new block.
-			randoBlock();
+			
+			DragTarget.setAttributeNS(null, 'transform', 'translate(' + (bbox.x + 5) + ',' + (bbox.y - 27) + ')');
 		}
 		
-		// STACKING // ...or if dragged onto the top of another block
-		else if ( targetElement.id == 'outline' )
-		{
+		// STACK PLACEMENT // ...or if dragged onto the top of another block
+		else if ( targetElement.id == 'outline' ) {
 			// if the dragged element is dropped on an element that is a child
 			//    of the folder group, it is inserted as a child of that group
 			targetElement.parentNode.appendChild( DragTarget );
@@ -205,14 +200,51 @@ function Drop(evt)
 			bbox = targetElement.getBBox();
 			// Snap object to grid
 			DragTarget.setAttributeNS(null, 'transform', 'translate(' + (bbox.x - 1) + ',' + (bbox.y - 34) + ')');
-
-			// Give us a new block.
-			randoBlock();
+		} else if ( targetElement.id == 'use3286' ) {
+			// if the dragged element is dropped on an element that is a child
+			//    of the folder group, it is inserted as a child of that group
+			targetElement.appendChild(DragTarget);
+			targetElement.removeChild(DragTarget);
 		} else {
 			// for this example, you cannot drag an item out of the folder once it's in there;
 			//    however, you could just as easily do so here
 			//alert(DragTarget.id + ' has been dropped on top of ' + targetElement.id);
 		}
+		
+		var blockmoved = false;
+		
+		// Check replaceblock; if present, check the kind and add a new block of the same kind,
+		// then set that attribute to false so we don't call this function when moving an already-placed block.
+		if (DragTarget.getAttributeNS(null, 'replaceblock') !== 'false') {
+			DragTarget.setAttributeNS(null, 'replaceblock', false);
+			populateNamed(blockcolor);
+		} else if (DragTarget.getAttributeNS(null, 'replaceblock') == 'false') {
+			blockmoved = true;
+		} else {
+			loggit('Move error!');
+		}
+		
+		// All the attributes a block should need.
+		id = Field[DragTarget.id][0];
+		x = Field[DragTarget.id][1];
+		y = Field[DragTarget.id][2];
+		z = Field[DragTarget.id][3];
+		color = Field[DragTarget.id][4];
+		if(Field[DragTarget.id][5] == 's'){
+			functionality = 'structural';
+		} else if (Field[DragTarget.id][5] == 'v') {
+			functionality = 'void';
+		}
+		
+		// Log the block's position.
+		if (isNaN(x)) {
+			loggit('Element placed offgrid.');
+		} else if (blockmoved == true) {
+			loggit('A ' + color + ' ' + functionality + ' element moved to ' + x + ', ' + y + ', ' + z + '.');
+		} else {
+			loggit('A ' + color + ' ' + functionality + ' element instantiated at ' + x + ', ' + y + ', ' + z + '.');
+		}
+		
 		// set the global variable to null, so nothing will be dragged until we
 		//    grab the next element
 		DragTarget = null;
