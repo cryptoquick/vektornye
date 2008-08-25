@@ -46,10 +46,8 @@ function gridTransform(grid_x, grid_y, screen_x, screen_y) {
 	// Initialize variables
 	var size_x = 45;
 	var size_y = 45;
-	var mid_x = Math.floor((screen_x / 2) - (Math.sqrt(2) * size_x * grid_x) / 2);
-	var mid_y = Math.floor((screen_y / 2));
-	var offset_x = mid_x;
-	var offset_y = mid_y;
+	var offset_x = Math.floor((screen_x / 2) - (Math.sqrt(2) * size_x * grid_x) / 2);
+	var offset_y = Math.floor((screen_y / 2));
 	var UIbar = 3;
 	var M1 = [];
 	var z = 0;
@@ -88,7 +86,7 @@ function gridTransform(grid_x, grid_y, screen_x, screen_y) {
 	M2 = Matrix.Rotation(angle);
 	M2 = M2.x(M25);
 	
-//	<g id="gridTransform" fill="#DDD" stroke="#777" stroke-width="1">
+	// Creates the gridTransform Group
 	gridGroup = document.createElementNS(svgNS, 'g');
 	gridGroup.setAttributeNS(null, 'id', 'gridTransform');
 	gridGroup.setAttributeNS(null, 'fill', '#DDD');
@@ -115,6 +113,10 @@ function gridTransform(grid_x, grid_y, screen_x, screen_y) {
 		gridGroup.appendChild(pathElement);
 	}
 	
+	// Build UI before the grid is built
+	UITransform(offset_x, offset_y);
+
+	// Add the entire grid group. Everything in this script adds to that group, so this comes last.
 	gridparent = document.getElementById('gridContainer');
 	gridparent.appendChild(gridGroup);
 
