@@ -1,0 +1,33 @@
+#summary One-sentence summary of this page.
+#labels Phase-Design
+
+= Introduction =
+The component consolidation function is based on the [http://en.wikipedia.org/wiki/A*_search_algorithm A-Star Search Algorithm]. It will build an object from voxels and will use an algorithm to create four isometric views of the voxel data as one consolidated component, while retaining shading.
+
+The algorithm will be done client-side, in !JavaScript. This helps with server load and responsiveness, and can display to the player exactly how far it is in calculating the algorithm. 
+
+= Details =
+An isometric voxel is made of nine lines (six outside, three inside), and three faces.
+The most important part is for the algorithm to search for nearby voxels.
+
+  * if there's no adjacent voxel, it's always got 9 lines & three faces if there's a voxel behind it, it'll still have 7 lines (sharing two with the other voxel)
+  * if there's two voxels behind it, there's 5 lines and 3 faces
+  * if there's 2 voxels behind and 1 above, it's just a corner (3 lines, 2 faces)
+  * if there's four adjacent voxels, there's 1 line & 2 faces
+  * if there's five, it's just 1 face, and if there's 6 adjacent voxels, there's nothing drawn at all.
+
+In order to do this, the algorithm will roughly do this:
+
+1. pop() a voxel out of the list.
+
+2a. Using this starting point, use this:
+
+  * if it's at point (7,6,3), it'll search...
+  * above (7,6,4) and below (7,6,2)
+  * left (7,5,3) and right (7,7,3)
+  * forward (8,6,3) and backward (6,6,3).
+
+2b. Remove block from the list and draw paths using the rules described above.
+
+3. If there's an adjacent block, continue drawing the path.
+This algorithm continues until the list is empty.
