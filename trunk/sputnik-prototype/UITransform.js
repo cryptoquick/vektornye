@@ -1,3 +1,26 @@
+//	Copyright 2008 Alex Trujillo
+//	Full source available here: http://code.google.com/p/vektornye/
+
+//	LICENSE
+//	This file is part of the Vektornye engine.
+//	
+//	Vektornye is free software: you can redistribute it and/or modify
+//	it under the terms of the GNU General Public License as published by
+//	the Free Software Foundation, either version 3 of the License, or
+//	(at your option) any later version.
+//	
+//	Vektornye is distributed in the hope that it will be useful,
+//	but WITHOUT ANY WARRANTY; without even the implied warranty of
+//	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//	GNU General Public License for more details.
+//	
+//	You should have received a copy of the GNU General Public License
+//	along with Vektornye.  If not, see <http://www.gnu.org/licenses/>.
+
+//	SUMMARY
+//	UITransform produces the blue and red user interface elements that are so
+//	critical to the placement and production of blocks.
+
 function UITransform(mid_x, mid_y) {
 	var M1 = [];
 	var z = 0;

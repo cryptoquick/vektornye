@@ -1,0 +1,7 @@
+print 'Content-Type: text/html'
+print '<html><head><title>Vektornye</title></head><body>'
+print '<h2>Welcome to Vektornye</h2>'
+print '<h3>Links:</h3>'
+print '<ul><li><a href="index.svg">Sputnik Demo</a>'
+print '<li><a href="http://code.google.com/p/vektornye/">Google Code</a> - wiki, group, & source</ul>'
+print '</body>'
