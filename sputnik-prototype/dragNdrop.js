@@ -1,4 +1,5 @@
 //	Copyright 2008 Alex Trujillo
+//	Full source available here: http://code.google.com/p/vektornye/
 
 //	LICENSE
 //	This file is part of the Vektornye engine.
@@ -40,14 +41,30 @@ var initialized = false;
 var Field = new Object();
 Field.length = 0;
 
+Voxel = new Array();
+
+// Creates values within an associative arrray of established coordinates
+function VoxArray(voxel, x, y, z, value) {
+	if (voxel[x] == null) {
+		voxel[x] = new Array(x);
+	}
+
+	if (voxel[x][y] == null) {
+		voxel[x][y] = new Array(y);
+	}
+
+	voxel[x][y][z] = value;
+}
+
 function transformGrid() {
 	// Make the grid (x,y) by getting the width & height of the root SVG element
 	gridTransform(grid_x, grid_y, window.innerWidth, window.innerHeight);
 }
 
-
 function Init(evt)
 {
+	var init0 = new Date(); 
+	
 	transformGrid();
 	
 	// Create a new block based on the template (hidden outside of the screen)
@@ -64,9 +81,20 @@ function Init(evt)
 	//    from being inadvertantly dropped when the mouse is moved rapidly
 	BackDrop = document.getElementById('BackDrop');
 	
+	// Move RightButtons to the right
+	rightbuttons = document.getElementById('RightButtons');
+	rightbuttons.setAttributeNS(null, 'transform', 'translate(' + (window.innerWidth - 220) + ', 25)');
+	// Populate the palette with colorful blocks
 	populatePalette();
 	
-	loggit('Program initialized.');
+	// This is set onload, because if the user moves their mouse before the file is loaded, an error occurs
+	SVGRoot.setAttributeNS(null, 'onmousemove', 'Drag(evt)');
+	
+//	onmousemove="Drag(evt)";
+	
+	var init1 = new Date(); 
+	
+	loggit('Program initialized in ' + (init1 - init0) + ' milliseconds.');
 	initialized = true;
 }
 
@@ -92,17 +120,29 @@ function Grab(evt) {
 		targetElement.parentNode.id.substr(7, 10)
 	}
 	*/
-	// you cannot drag the background itself, so ignore any attempts to mouse down on it
-	// Make sure the element is not in the noFlyZone
-	// Took this out, forgot why it was there...  || targetElement == SVGRoot.target
-	// We might want to reverse that to make only flying objects fly, rather than making non-flying object not fly, like we do now.
-	// if (BackDrop != targetElement && nFZ != 'nFZ')
-	if (targetElement.parentNode.id.substr(0,5) == 'block')
-	{		
+	
+	// This code should move only blocks.
+	if (targetElement.parentNode.id.substr(0,5) == 'block' || targetElement.parentNode.id.substr(0,5) == 'inlay') {		
 		//set the item moused down on as the element to be dragged
-		DragTarget = targetElement.parentNode;
-
-		// Attach to SVGRoot so, it appears over everything else when dragged.
+		if (targetElement.parentNode.id.substr(0,5) == 'inlay') {
+			DragTarget = targetElement.parentNode.parentNode;
+		} else {
+			DragTarget = targetElement.parentNode;
+		}
+		// Grab parent attributes before DragTarget is attached to SVGRoot
+		dragParent = DragTarget.parentNode.id;
+		
+		var dragParentCTM = new Object;
+		
+		dragParentCTM.e = 0;
+		dragParentCTM.f = 0;
+		
+		if (dragParent.substr(0, 5) == 'block') {
+			dragParentCTM = DragTarget.parentNode.getCTM();
+			DragTarget.setAttributeNS(null, 'transform', 'translate(' + (dragParentCTM.e - 1) + ',' + (dragParentCTM.f - 34) + ')');
+		}		
+		
+		// Attach to SVGRoot so it appears over everything else when dragged.
 		SVGRoot.appendChild(DragTarget);
 		
 		// turn off all pointer events to the dragged element, this does 2 things:
@@ -115,9 +155,12 @@ function Grab(evt) {
 		// we need to find the current position and translation of the grabbed element,
 		//    so that we only apply the differential between the current location
 		//    and the new location
+		
+		// Find the Current Transformation Matrix of the grabbed element, and, calculate the difference
+		// between the current and new locations, in addition to the CTM of its parent (if available)
 		var transMatrix = DragTarget.getCTM();
-		GrabPoint.x = TrueCoords.x - Number(transMatrix.e);
-		GrabPoint.y = TrueCoords.y - Number(transMatrix.f);
+		GrabPoint.x = TrueCoords.x - (Number(transMatrix.e));
+		GrabPoint.y = TrueCoords.y - (Number(transMatrix.f));
 	}
 };
 
@@ -136,9 +179,6 @@ function Drag(evt)
 		
 		// apply a new tranform translation to the dragged element, to display
 		//    it in its new location
-		
-		// this is also KLUDGY and needs work
-		// var transformBucket = DragTarget.getAttribute('transform').indexOf('scale')
 		DragTarget.setAttributeNS(null, 'transform', 'translate(' + newX + ',' + newY + ')');
 	}
 };
@@ -157,83 +197,159 @@ function Drop(evt)
 		// turn the pointer-events back on, so we can grab this item later
 		DragTarget.setAttributeNS(null, 'pointer-events', 'all');
 		
-		// Number ID of the grid element
-		gridnum = targetElement.id.substr(7, 10);
-		// Get the color of the block
-		//blockcolor = DragTarget.childNodes[1].getAttribute('fill');
-		blockcolor = DragTarget.getAttributeNS(null, 'block-color');
+		// Needed for keeping track of blocks upon removal
+		var blockexists = null;
 		
-		// Find grid coordinates
-		coor_x = Math.floor(gridnum / 16); // grid_x & grix_y are being changed somewhere along the road...
-		coor_y = gridnum % 16;
-		
-		if(blockcolor == 'clear'){
-			blockattrs = new Array(DragTarget.id, coor_x, coor_y, 0, blockcolor, 'v');
-		} else {
-			blockattrs = new Array(DragTarget.id, coor_x, coor_y, 0, blockcolor, 's');
-		}
-		
-		// Register the block with the Field
-		Field[DragTarget.id] = blockattrs; // 's' functionality stands for 'structural'
-		Field.length++;
-		// loggit(Field.length);
+		// Needed for when dumbasses waste blocks
+		var blockwasted = false;
 		
 		// GRID PLACEMENT // If the object is placed directly on the grid...
-		if ( 'gridTransform' == targetElement.parentNode.id )
-		{			
-			// if the dragged element is dropped on an element that is a child
-			//    of the folder group, it is inserted as a child of that group
-			targetElement.parentNode.appendChild( DragTarget );			
+		if ('gridTransform' == targetElement.parentNode.id)
+		{
+			// Number ID of the grid element
+			gridnum = targetElement.id.substr(7, 10);
+			// Get the color of the block
+			blockcolor = DragTarget.getAttributeNS(null, 'block-color');
+			
+			// Find grid coordinates
+			coor_x = Math.floor(gridnum / 16); // grid_x & grix_y are being changed somewhere along the road...
+			coor_y = gridnum % 16;
+			
+			// Adds object to grid, plus some draw order logic (to keep visual perspective sane)
+			if (Voxel[(coor_x - 1)] !== undefined) {
+				if (Voxel[(coor_x - 1)][coor_y] !== undefined) {
+					if (Voxel[(coor_x - 1)][coor_y][0] !== undefined && Voxel[(coor_x - 1)][coor_y][0] !== DragTarget.id) {
+						blockEast = Voxel[(coor_x - 1)][coor_y][0];
+						targetElement.parentNode.insertBefore(DragTarget, document.getElementById(blockEast));
+					}
+				}
+			} else if (Voxel[coor_x] !== undefined) {
+				if (Voxel[coor_x][(coor_y + 1)] !== undefined) {
+					if (Voxel[coor_x][(coor_y + 1)][0] !== undefined && Voxel[coor_x][(coor_y + 1)][0] !== DragTarget.id) {
+						blockNorth = Voxel[coor_x][(coor_y + 1)][0];
+						targetElement.parentNode.insertBefore(DragTarget, document.getElementById(blockNorth));
+					}
+				}
+			} else {
+				targetElement.parentNode.appendChild(DragTarget);
+			}
 
-			// Snap object to grid, but if the element is behind another, render the one in front first
 			bbox = targetElement.getBBox();
 			
 			DragTarget.setAttributeNS(null, 'transform', 'translate(' + (bbox.x + 5) + ',' + (bbox.y - 27) + ')');
+			
+			if(blockcolor == 'clear'){
+				blockattrs = new Array(DragTarget.id, coor_x, coor_y, 0, blockcolor, 'v');
+			} else {
+				blockattrs = new Array(DragTarget.id, coor_x, coor_y, 0, blockcolor, 's');
+			}
+			
+			// Register the block with the Field
+			Field[DragTarget.id] = blockattrs;
+			Field.length++;
+			
+			// Register voxel
+			VoxArray(Voxel, coor_x, coor_y, 0, DragTarget.id);
+			
+			blockexists = true;
+			
+			// Check replaceblock; if present, check the kind and add a new block of the same kind,
+			// then set that attribute to false so we don't call this function when moving an already-placed block.
+			if (DragTarget.getAttributeNS(null, 'replaceblock') !== 'false') {
+				DragTarget.setAttributeNS(null, 'replaceblock', false);
+				populateNamed(blockcolor);
+			} else if (DragTarget.getAttributeNS(null, 'replaceblock') == 'false') {
+				blockmoved = true;
+			} else {
+				loggit('Move error!');
+			}
 		}
 		
 		// STACK PLACEMENT // ...or if dragged onto the top of another block
 		else if ( targetElement.id == 'outline' ) {
-			// if the dragged element is dropped on an element that is a child
-			//    of the folder group, it is inserted as a child of that group
 			targetElement.parentNode.appendChild( DragTarget );
+
+			var dragParentCTM = targetElement.parentNode.getCTM();
 
 			bbox = targetElement.getBBox();
 			// Snap object to grid
 			DragTarget.setAttributeNS(null, 'transform', 'translate(' + (bbox.x - 1) + ',' + (bbox.y - 34) + ')');
-		} else if ( targetElement.id == 'use3286' ) {
-			// if the dragged element is dropped on an element that is a child
-			//    of the folder group, it is inserted as a child of that group
+			
+			// Get the color of the block
+			//blockcolor = DragTarget.childNodes[1].getAttribute('fill');
+			blockcolor = DragTarget.getAttributeNS(null, 'block-color');
+			
+			x = Field[targetElement.parentNode.id][1];
+			y = Field[targetElement.parentNode.id][2];
+			z = Field[targetElement.parentNode.id][3];
+			z++; // bad, needs to be smarter
+			
+			if(blockcolor == 'clear'){
+			blockattrs = new Array(DragTarget.id, x, y, z, blockcolor, 'v');
+			} else {
+			blockattrs = new Array(DragTarget.id, x, y, z, blockcolor, 's');
+			}
+			
+			// Register the block with the Field
+			Field[DragTarget.id] = blockattrs;
+			Field.length++;
+			
+			VoxArray(Voxel, x, y, z, DragTarget.id);
+			
+			blockexists = true;
+			
+			// Check replaceblock; if present, check the kind and add a new block of the same kind,
+			// then set that attribute to false so we don't call this function when moving an already-placed block.
+			if (DragTarget.getAttributeNS(null, 'replaceblock') !== 'false') {
+				DragTarget.setAttributeNS(null, 'replaceblock', false);
+				populateNamed(blockcolor);
+			} else if (DragTarget.getAttributeNS(null, 'replaceblock') == 'false') {
+				blockmoved = true;
+			} else {
+				loggit('Move error!');
+			}
+		}		
+		// REMOVAL //
+		else if ( targetElement.id == 'use3286' ) {
+			blockcolor = DragTarget.getAttributeNS(null, 'block-color');
+			if (DragTarget.getAttributeNS(null, 'replaceblock') !== 'false') {
+				DragTarget.setAttributeNS(null, 'replaceblock', false);
+				populateNamed(blockcolor);
+				blockwasted = true;
+			} else {
+				x = Field[DragTarget.id][1];
+				y = Field[DragTarget.id][2];
+				z = Field[DragTarget.id][3];
+		
+				Field[DragTarget.id] = null;
+				Field.length--
+				
+				VoxArray(Voxel, x, y, z, null);
+			}
+			
 			targetElement.appendChild(DragTarget);
+			
 			targetElement.removeChild(DragTarget);
+			
+			blockexists = false;
 		} else {
-			// for this example, you cannot drag an item out of the folder once it's in there;
-			//    however, you could just as easily do so here
-			//alert(DragTarget.id + ' has been dropped on top of ' + targetElement.id);
+			loggit('Placement error.');
 		}
 		
 		var blockmoved = false;
 		
-		// Check replaceblock; if present, check the kind and add a new block of the same kind,
-		// then set that attribute to false so we don't call this function when moving an already-placed block.
-		if (DragTarget.getAttributeNS(null, 'replaceblock') !== 'false') {
-			DragTarget.setAttributeNS(null, 'replaceblock', false);
-			populateNamed(blockcolor);
-		} else if (DragTarget.getAttributeNS(null, 'replaceblock') == 'false') {
-			blockmoved = true;
-		} else {
-			loggit('Move error!');
-		}
-		
-		// All the attributes a block should need.
-		id = Field[DragTarget.id][0];
-		x = Field[DragTarget.id][1];
-		y = Field[DragTarget.id][2];
-		z = Field[DragTarget.id][3];
-		color = Field[DragTarget.id][4];
-		if(Field[DragTarget.id][5] == 's'){
-			functionality = 'structural';
-		} else if (Field[DragTarget.id][5] == 'v') {
-			functionality = 'void';
+		// All the attributes a block should need. Run only if the block still exists.
+		if(blockexists) {
+			id = Field[DragTarget.id][0];
+			x = Field[DragTarget.id][1];
+			y = Field[DragTarget.id][2];
+			z = Field[DragTarget.id][3];
+			color = Field[DragTarget.id][4];
+			if(Field[DragTarget.id][5] == 's'){
+				functionality = 'structural';
+			} else if (Field[DragTarget.id][5] == 'v') {
+				functionality = 'void';
+			}
 		}
 		
 		// Log the block's position.
@@ -241,6 +357,10 @@ function Drop(evt)
 			loggit('Element placed offgrid.');
 		} else if (blockmoved == true) {
 			loggit('A ' + color + ' ' + functionality + ' element moved to ' + x + ', ' + y + ', ' + z + '.');
+		} else if (blockexists == false && blockwasted == false) {
+			loggit("Block removed.");
+		} else if (blockwasted == true) {
+			loggit("Don't waste blocks!");
 		} else {
 			loggit('A ' + color + ' ' + functionality + ' element instantiated at ' + x + ', ' + y + ', ' + z + '.');
 		}

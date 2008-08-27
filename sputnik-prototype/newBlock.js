@@ -1,4 +1,5 @@
 //	Copyright 2008 Alex Trujillo
+//	Full source available here: http://code.google.com/p/vektornye/
 
 //	LICENSE
 //	This file is part of the Vektornye engine.
@@ -17,9 +18,9 @@
 //	along with Vektornye.  If not, see <http://www.gnu.org/licenses/>.
 
 //	SUMMARY
-//	newBlock.js provides code specific to the editor, duplicating a group of
-//	SVG elements, then assigns it a certain RGB color. It also contains a
-//	function for random colors.
+//	newBlock.js provides code specific to the editor. It duplicates a group of
+//	SVG elements, then assigns it a certain RGB color. It builds the palette of colors
+//	seen when the program first starts. It also contains a function for random colors.
 
 var tick = 100
 
@@ -38,16 +39,17 @@ function array_search_key(array,num) {
 }
 
 var palette = new Array();
-palette[0] = [164, 0, 0, 'red'];
-palette[1] = [211, 127, 4, 'orange'];
-palette[2] = [213, 184, 8, 'yellow'];
-palette[3] = [42, 197, 18, 'green'];
-palette[4] = [43, 84, 200, 'blue'];
-palette[5] = [147, 29, 199, 'purple'];
-palette[6] = [190, 67, 180, 'pink'];
-palette[7] = [201, 202, 188, 'white'];
-palette[8] = [55, 48, 51, 'black'];
-palette[9] = [201, 202, 188, 'clear'];
+palette[0] = [164, 0, 0, 'red', null];
+palette[1] = [211, 127, 4, 'orange', null];
+palette[2] = [213, 184, 8, 'yellow', null];
+palette[3] = [42, 197, 18, 'green', null];
+palette[4] = [43, 84, 200, 'blue', null];
+palette[5] = [147, 29, 199, 'purple', null];
+palette[6] = [190, 67, 180, 'pink', null];
+palette[7] = [201, 202, 188, 'white', null];
+palette[8] = [55, 48, 51, 'black', null];
+palette[9] = [201, 202, 188, 'clear', null];
+palette[10] = [191, 155, 98, 'random', null];
 
 function block(movX, movY, color) {
 	tick++;
@@ -70,12 +72,13 @@ function dupoBlock(blockId, movX, movY) {
 }
 
 function populatePalette() {
-	for (i= 0; i <= 9; i++) {
+	for (i= 0; i <= (palette.length - 1); i++) {
 		targetElement = document.getElementById('UILeft-' + i);
 		bbox = targetElement.getBBox();
-		blok = block((bbox.x + 16), (bbox.y - 21), palette[i])
+		blok = block((bbox.x + 55), (bbox.y - 15), palette[i])
 		blok.setAttributeNS(null, 'replaceblock', palette[i][3]);
 		blok.setAttributeNS(null, 'block-color', palette[i][3]);
+		palette[i][4] = blok.id;
 		SVGRoot.appendChild(blok);
 	}
 	
@@ -90,10 +93,15 @@ function populateNamed(colorname) {
 	targetElement = document.getElementById('UILeft-' + e);
 	
 	bbox = targetElement.getBBox();
-	blok = block((bbox.x + 16), (bbox.y - 21), palette[e])
+	blok = block((bbox.x + 55), (bbox.y - 15), palette[e])
 	blok.setAttributeNS(null, 'replaceblock', palette[e][3]);
 	blok.setAttributeNS(null, 'block-color', palette[e][3]);
-	SVGRoot.appendChild(blok);
+	if (e + 1 == palette.length) {
+		SVGRoot.appendChild(blok);
+	} else {
+		SVGRoot.insertBefore(blok, document.getElementById(palette[(e+1)][4]));
+	}
+	palette[e][4] = blok.id;
 }
 
 function setColor(obj, colorR, colorG, colorB) {
@@ -106,6 +114,7 @@ function setColor(obj, colorR, colorG, colorB) {
 	obj.childNodes[5].setAttributeNS(null, "fill", colorTop);
 	obj.childNodes[7].setAttributeNS(null, "stroke", colorLines);
 	obj.setAttributeNS(null, "fill-opacity", 1.0);
+	obj.setAttributeNS(null, "stroke-opacity", 1.0);
 	return obj;
 }
 
@@ -122,6 +131,7 @@ function randomColor(obj) {
 	obj.childNodes[5].setAttributeNS(null, "fill", colorTop);
 	obj.childNodes[7].setAttributeNS(null, "stroke", colorLines);
 	obj.setAttributeNS(null, "fill-opacity", 1.0);
+	obj.setAttributeNS(null, "stroke-opacity", 1.0);
 	return obj;
 }
 
@@ -136,7 +146,7 @@ function clearColor(obj, colorR, colorG, colorB) {
 	obj.childNodes[5].setAttributeNS(null, "fill", colorTop);
 	obj.childNodes[7].setAttributeNS(null, "stroke", colorLines);
 	obj.childNodes[9].setAttributeNS(null, "stroke", colorLines);
-	obj.setAttributeNS(null, "fill-opacity", 0.5);
-	obj.setAttributeNS(null, "stroke-opacity", 0.7);
+	obj.setAttributeNS(null, "fill-opacity", 0.3);
+	obj.setAttributeNS(null, "stroke-opacity", 0.5);
 	return obj;
 }

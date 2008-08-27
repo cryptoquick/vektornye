@@ -1,4 +1,5 @@
 //	Copyright 2008 Alex Trujillo
+//	Full source available here: http://code.google.com/p/vektornye/
 
 //	LICENSE
 //	This file is part of the Vektornye engine.
@@ -24,20 +25,7 @@
 //	grid. There's also code here to place SVG code into the DOM, as well as some other
 //	debugging functionality.
 
-
 svgNS = 'http://www.w3.org/2000/svg';
-
-// Turns a string into something DOM can understand
-function parseSVG(str) {
-  str = '<g xmlns="http://www.w3.org/2000/svg">' + str + '</g>';
-  return new DOMParser().parseFromString(str, "text/xml").childNodes[0];
-}
-
-function parseXML (doc, str) {
-	doc2 = (new DOMParser()).parseFromString(str, "text/xml");
-	//doc.importNode(doc2, true);
-	return doc2.firstChild;
-}
 
 function gridTransform(grid_x, grid_y, screen_x, screen_y) {
 	// Start Timer
@@ -46,8 +34,13 @@ function gridTransform(grid_x, grid_y, screen_x, screen_y) {
 	// Initialize variables
 	var size_x = 45;
 	var size_y = 45;
-	var offset_x = Math.floor((screen_x / 2) - (Math.sqrt(2) * size_x * grid_x) / 2);
+	
+	var gridsize_x = Math.floor(Math.sqrt(2) * size_x * grid_x);
+	var gridsize_y = Math.floor(gridsize_x / 2) + 84;
+	
+	var offset_x = Math.floor((screen_x / 2) - gridsize_x / 2);
 	var offset_y = Math.floor((screen_y / 2));
+	
 	var UIbar = 3;
 	var M1 = [];
 	var z = 0;
@@ -126,4 +119,12 @@ function gridTransform(grid_x, grid_y, screen_x, screen_y) {
 	// Add timer and resolution info to Debug Box
 	loggit("Grid Transform took " + (end - start) + " milliseconds to render.");
 	loggit("Available screen: " + screen_x + " pixels by " + screen_y + " pixels.");
+	
+	if(screen_x < gridsize_x && screen_y < gridsize_y) {
+		loggit('Your window may be large enough. Please resize and refresh.');
+	} else if (screen_x < gridsize_x) {
+		loggit('Your window may not be wide enough. Please resize and refresh.');
+	} else if (screen_y < gridsize_y) {
+		loggit('Your window may not be tall enough. Please resize and refresh.');
+	}
 }

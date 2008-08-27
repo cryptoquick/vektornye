@@ -1,4 +1,5 @@
 //	Copyright 2008 Alex Trujillo
+//	Full source available here: http://code.google.com/p/vektornye/
 
 //	LICENSE
 //	This file is part of the Vektornye engine.
