@@ -81,9 +81,6 @@ function Init(evt)
 	//    from being inadvertantly dropped when the mouse is moved rapidly
 	BackDrop = document.getElementById('BackDrop');
 	
-	// Move RightButtons to the right
-	rightbuttons = document.getElementById('RightButtons');
-	rightbuttons.setAttributeNS(null, 'transform', 'translate(' + (window.innerWidth - 220) + ', 25)');
 	// Populate the palette with colorful blocks
 	populatePalette();
 	
@@ -203,6 +200,9 @@ function Drop(evt)
 		// Needed for when dumbasses waste blocks
 		var blockwasted = false;
 		
+		// The difference between 'moved' and 'created'
+		var blockmoved = false;
+		
 		// GRID PLACEMENT // If the object is placed directly on the grid...
 		if ('gridTransform' == targetElement.parentNode.id)
 		{
@@ -238,7 +238,7 @@ function Drop(evt)
 			
 			DragTarget.setAttributeNS(null, 'transform', 'translate(' + (bbox.x + 5) + ',' + (bbox.y - 27) + ')');
 			
-			if(blockcolor == 'clear'){
+			if(blockcolor == 'void'){
 				blockattrs = new Array(DragTarget.id, coor_x, coor_y, 0, blockcolor, 'v');
 			} else {
 				blockattrs = new Array(DragTarget.id, coor_x, coor_y, 0, blockcolor, 's');
@@ -246,6 +246,7 @@ function Drop(evt)
 			
 			// Register the block with the Field
 			Field[DragTarget.id] = blockattrs;
+			
 			Field.length++;
 			
 			// Register voxel
@@ -284,10 +285,10 @@ function Drop(evt)
 			z = Field[targetElement.parentNode.id][3];
 			z++; // bad, needs to be smarter
 			
-			if(blockcolor == 'clear'){
-			blockattrs = new Array(DragTarget.id, x, y, z, blockcolor, 'v');
+			if(blockcolor == 'void'){
+				blockattrs = new Array(DragTarget.id, x, y, z, blockcolor, 'v');
 			} else {
-			blockattrs = new Array(DragTarget.id, x, y, z, blockcolor, 's');
+				blockattrs = new Array(DragTarget.id, x, y, z, blockcolor, 's');
 			}
 			
 			// Register the block with the Field
@@ -336,8 +337,6 @@ function Drop(evt)
 			loggit('Placement error.');
 		}
 		
-		var blockmoved = false;
-		
 		// All the attributes a block should need. Run only if the block still exists.
 		if(blockexists) {
 			id = Field[DragTarget.id][0];
@@ -348,7 +347,7 @@ function Drop(evt)
 			if(Field[DragTarget.id][5] == 's'){
 				functionality = 'structural';
 			} else if (Field[DragTarget.id][5] == 'v') {
-				functionality = 'void';
+				functionality = '';
 			}
 		}
 		
@@ -362,7 +361,7 @@ function Drop(evt)
 		} else if (blockwasted == true) {
 			loggit("Don't waste blocks!");
 		} else {
-			loggit('A ' + color + ' ' + functionality + ' element instantiated at ' + x + ', ' + y + ', ' + z + '.');
+			loggit('A ' + color + ' ' + functionality + ' element created at ' + x + ', ' + y + ', ' + z + '.');
 		}
 		
 		// set the global variable to null, so nothing will be dragged until we

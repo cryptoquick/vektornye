@@ -48,23 +48,26 @@ palette[5] = [147, 29, 199, 'purple', null];
 palette[6] = [190, 67, 180, 'pink', null];
 palette[7] = [201, 202, 188, 'white', null];
 palette[8] = [55, 48, 51, 'black', null];
-palette[9] = [201, 202, 188, 'clear', null];
-palette[10] = [191, 155, 98, 'random', null];
+palette[9] = [255, 255, 255, 'transparent', null];
+palette[10] = [0, 0, 0, 'void', null];
+palette[11] = [0, 0, 0, 'random', null];
 
 function block(movX, movY, color) {
 	tick++;
-	blockBlank = dupoBlock(tick, movX, movY);
+	blockBlank = dupeBlock(tick, movX, movY);
 	if (color[3] == 'random') {
 		blockColor = randomColor(blockBlank);
-	} else if (color[3] == 'clear') {
-		blockColor = clearColor(blockBlank, color[0], color[1], color[2]);
+	} else if (color[3] == 'transparent') {
+		blockColor = transparentColor(blockBlank, color[0], color[1], color[2]);
+	} else if (color[3] == 'void') {
+		blockColor = voidColor(blockBlank);
 	} else {
 		blockColor = setColor(blockBlank, color[0], color[1], color[2]);
 	}
 	return blockColor;
 }
 
-function dupoBlock(blockId, movX, movY) {
+function dupeBlock(blockId, movX, movY) {
 	var obj = document.getElementById("blockBeta").cloneNode(true);
 	obj.setAttributeNS(null, "id", "block" + blockId);
 	obj.setAttributeNS(null, "transform", "translate(" + movX + "," + movY + ")");
@@ -72,7 +75,7 @@ function dupoBlock(blockId, movX, movY) {
 }
 
 function populatePalette() {
-	for (i= 0; i <= (palette.length - 1); i++) {
+	for (i= 0; i <= (palette.length - 2); i++) {
 		targetElement = document.getElementById('UILeft-' + i);
 		bbox = targetElement.getBBox();
 		blok = block((bbox.x + 55), (bbox.y - 15), palette[i])
@@ -89,11 +92,16 @@ function populatePalette() {
 
 function populateNamed(colorname) {
 	e = array_search(palette, colorname);
+	if(colorname == 'random') {
+		targetElement = document.getElementById('logo');
+//		bbox = targetElement.getBBox();
+		blok = block(((window.innerWidth / 2) - 26), (window.innerHeight - 93), palette[e])
+	} else {
+		targetElement = document.getElementById('UILeft-' + e);
+		bbox = targetElement.getBBox();
+		blok = block((bbox.x + 55), (bbox.y - 15), palette[e])
+	}
 
-	targetElement = document.getElementById('UILeft-' + e);
-	
-	bbox = targetElement.getBBox();
-	blok = block((bbox.x + 55), (bbox.y - 15), palette[e])
 	blok.setAttributeNS(null, 'replaceblock', palette[e][3]);
 	blok.setAttributeNS(null, 'block-color', palette[e][3]);
 	if (e + 1 == palette.length) {
@@ -103,6 +111,8 @@ function populateNamed(colorname) {
 	}
 	palette[e][4] = blok.id;
 }
+
+/// These need to be consolidated into a single function!
 
 function setColor(obj, colorR, colorG, colorB) {
 	colorLeft = "rgb(" + colorR + "," + colorG + "," + colorB + ")";
@@ -135,11 +145,10 @@ function randomColor(obj) {
 	return obj;
 }
 
-function clearColor(obj, colorR, colorG, colorB) {
+function transparentColor(obj, colorR, colorG, colorB) {
 	colorLeft = "rgb(" + colorR + "," + colorG + "," + colorB + ")";
 	colorRight = "rgb(" + (colorR + 20) + "," + (colorG + 20) + "," + (colorB + 20) + ")";
 	colorTop = "rgb(" + (colorR + 40) + "," + (colorG + 40) + "," + (colorB + 40) + ")";
-//	colorLines = "rgb(114, 159, 207)";
 	colorLines = 'rgb(52,101,164)';
 	obj.childNodes[1].setAttributeNS(null, "fill", colorLeft);
 	obj.childNodes[3].setAttributeNS(null, "fill", colorRight);
@@ -148,5 +157,55 @@ function clearColor(obj, colorR, colorG, colorB) {
 	obj.childNodes[9].setAttributeNS(null, "stroke", colorLines);
 	obj.setAttributeNS(null, "fill-opacity", 0.3);
 	obj.setAttributeNS(null, "stroke-opacity", 0.5);
+	
+	createInlay(obj, colorLines);
+	
+	createLine(obj, 26, 0, 26, 30);
+	createLine(obj, 1, 43, 26, 30);
+	createLine(obj, 51, 43, 26, 30);
+	
 	return obj;
+}
+
+function voidColor(obj) {
+	colorR = 255;
+	colorG = 255;
+	colorB = 255;
+	colorLeft = "rgb(" + colorR + "," + colorG + "," + colorB + ")";
+	colorRight = "rgb(" + (colorR + 20) + "," + (colorG + 20) + "," + (colorB + 20) + ")";
+	colorTop = "rgb(" + (colorR + 40) + "," + (colorG + 40) + "," + (colorB + 40) + ")";
+	colorLines = 'rgb(255,255,255)';
+	obj.childNodes[1].setAttributeNS(null, "fill", colorLeft);
+	obj.childNodes[3].setAttributeNS(null, "fill", colorRight);
+	obj.childNodes[5].setAttributeNS(null, "fill", colorTop);
+	obj.childNodes[7].setAttributeNS(null, "stroke", colorLines);
+	obj.childNodes[9].setAttributeNS(null, "stroke", colorLines);
+	obj.setAttributeNS(null, "fill-opacity", 0.0);
+	obj.setAttributeNS(null, "stroke-opacity", 0.7);
+	
+	createInlay(obj, colorLines);
+	
+	createLine(obj, 26, 0, 26, 30);
+	createLine(obj, 1, 43, 26, 30);
+	createLine(obj, 51, 43, 26, 30);
+
+	return obj;
+}
+
+function createInlay(obj, colorLines) {
+	bgInlay = document.createElementNS(svgNS, 'g');
+	bgInlay.setAttributeNS(null, 'id', 'bgInlay');
+	bgInlay.setAttributeNS(null, 'stroke', colorLines);
+	bgInlay.setAttributeNS(null, 'stroke-width', 2);
+	bgInlay.setAttributeNS(null, 'stroke-opacity', 0.5);
+	obj.appendChild(bgInlay);
+}
+
+function createLine(obj, x1, y1, x2, y2) {
+	bgInlay = document.createElementNS(svgNS, 'line');
+	bgInlay.setAttributeNS(null, 'x1', x1);
+	bgInlay.setAttributeNS(null, 'y1', y1);
+	bgInlay.setAttributeNS(null, 'x2', x2);
+	bgInlay.setAttributeNS(null, 'y2', y2);
+	obj.childNodes[11].appendChild(bgInlay);
 }
