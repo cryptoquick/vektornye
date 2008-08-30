@@ -1,0 +1,8 @@
+#summary Tasks and notes.
+
+= Tasks =
+  # Block highlight and selection
+  # Block duplication along an axis
+  # Repository / Marketplace
+  # Views can be switched to render objects on a different scale, with a new grid, loading rendered objects
+  # Code cleanup, preparation for Voskhod-1
