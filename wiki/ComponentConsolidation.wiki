@@ -1,10 +1,17 @@
-#summary One-sentence summary of this page.
+#summary Rendering and consolidation of block components.
 #labels Phase-Design
 
 = Introduction =
 The component consolidation function is based on the [http://en.wikipedia.org/wiki/A*_search_algorithm A-Star Search Algorithm]. It will build an object from voxels and will use an algorithm to create four isometric views of the voxel data as one consolidated component, while retaining shading.
 
 The algorithm will be done client-side, in !JavaScript. This helps with server load and responsiveness, and can display to the player exactly how far it is in calculating the algorithm. 
+
+Development will implement features incrementally, as this is a very complex function:
+  # Render outline path
+  # Render inlay paths
+  # Render face fill (color agnostic)
+  # Render faces (shaded)
+  # Render faces (shaded & colored)
 
 = Details =
 An isometric voxel is made of nine lines (six outside, three inside), and three faces.
