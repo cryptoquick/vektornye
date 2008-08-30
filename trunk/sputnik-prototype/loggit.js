@@ -33,7 +33,9 @@ function loggit(str) {
 		log.firstChild.setAttributeNS(null, 'dy', 5);
 	}
 	
-	var textElement = document.getElementById("hidden").firstChild.cloneNode(true);
+	var textElement = document.createElementNS(svgNS, 'tspan');
+	textElement.setAttributeNS(null, 'x', '20');
+	textElement.setAttributeNS(null, 'dy', '18');
 
 	textElement.textContent = str;
 	

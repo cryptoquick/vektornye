@@ -1,20 +1,12 @@
 application: vektornye
-version: 1
+version: 2
 runtime: python
 api_version: 1
 
 handlers:
-- url: .(.*\.(svg))
+- url: .(.*\.(svg|js|png|ico))
   static_files: \1
-  upload: .(.*\.(svg))
-
-- url: .(.*\.(js))
-  static_files: \1
-  upload: .(.*\.(js))
-
-- url: .(.*\.(png))
-  static_files: \1
-  upload: .(.*\.(png))
+  upload: .(.*\.(svg|js|png|ico))
 
 - url: /.*
-  script: index.py
+  script: main.py

@@ -28,19 +28,17 @@
 svgNS = 'http://www.w3.org/2000/svg';
 
 function gridTransform(grid_x, grid_y, screen_x, screen_y) {
-	// Start Timer
-	var start = new Date(); 
 	
 	// Initialize variables
 	var size_x = 45;
 	var size_y = 45;
 	
 	var gridsize_x = Math.floor(Math.sqrt(2) * size_x * grid_x);
-	var gridsize_y = Math.floor(gridsize_x / 2) + 84;
+	var gridsize_y = Math.floor(gridsize_x / 2);
 	
 	var offset_x = Math.floor((screen_x / 2) - gridsize_x / 2);
-	var offset_y = Math.floor((screen_y / 2));
-	
+	var offset_y = (screen_y - gridsize_y) + 145;
+
 	var UIbar = 3;
 	var M1 = [];
 	var z = 0;
@@ -112,19 +110,54 @@ function gridTransform(grid_x, grid_y, screen_x, screen_y) {
 	// Add the entire grid group. Everything in this script adds to that group, so this comes last.
 	gridparent = document.getElementById('gridContainer');
 	gridparent.appendChild(gridGroup);
-
-	// End Timer
-	end = new Date();
 	
 	// Add timer and resolution info to Debug Box
-	loggit("Grid Transform took " + (end - start) + " milliseconds to render.");
 	loggit("Available screen: " + screen_x + " pixels by " + screen_y + " pixels.");
 	
 	if(screen_x < gridsize_x && screen_y < gridsize_y) {
-		loggit('Your window may be large enough. Please resize and refresh.');
+		loggit('Your window may be large enough. Please zoom out and refresh.');
 	} else if (screen_x < gridsize_x) {
-		loggit('Your window may not be wide enough. Please resize and refresh.');
-	} else if (screen_y < gridsize_y) {
-		loggit('Your window may not be tall enough. Please resize and refresh.');
+		loggit('Your window may not be wide enough. Please zoom out and refresh.');
+	} else if (screen_y < (gridsize_y + 120)) {
+		loggit('Your window may not be tall enough. Please zoom out and refresh.');
 	}
+	
+	/// Position UI elements
+	
+	// Move RightButtons to the right
+	movesubject = document.getElementById('RightButtons');
+	movesubject.setAttributeNS(null, 'transform', 'translate(' + (screen_x - 220) + ', ' + (screen_y - 50) + ')');
+	
+	// Widen footerbg to the width of the screen
+	movesubject = document.getElementById('footerbg');
+	movesubject.setAttributeNS(null, 'width', (screen_x - 10));
+	
+	// Move the Footer to the bottom of the screen
+	movesubject = document.getElementById('Footer');
+	movesubject.setAttributeNS(null, 'transform', 'translate(0, ' + (screen_y - 65) + ')');
+
+	// Make the triangle behind the logo
+	movesubject = document.getElementById('logobg');
+	path = '';
+	path += 'M ' + (screen_x / 2 - 92) + ' ' + (screen_y - 63);
+	path += ' L ' + (screen_x / 2) + ' ' + (screen_y - 109);
+	path += ' L ' + (screen_x / 2 + 92) + ' ' + (screen_y - 63);
+	path += ' z';
+	movesubject.setAttributeNS(null, 'd', path);
+	
+	movesubject = document.getElementById('logobgstroke');
+	path = '';
+	path += 'M ' + (screen_x / 2 - 90) + ' ' + (screen_y - 65);
+	path += ' L ' + (screen_x / 2) + ' ' + (screen_y - 109);
+	path += ' L ' + (screen_x / 2 + 90) + ' ' + (screen_y - 65);
+	movesubject.setAttributeNS(null, 'd', path);
+	
+	// Position blockBeta	
+	movesubject = document.getElementById('blockBeta');
+	movesubject.setAttributeNS(null, 'transform', 'translate(' + ((screen_x / 2) - 26) + ', ' + (screen_y - 93) + ')');
+	
+	// Position title text under blockBeta
+	movesubject = document.getElementById('vektornye');
+	textoffset = movesubject.getBBox();
+	movesubject.setAttributeNS(null, 'transform', 'translate(' + ((screen_x / 2) - (textoffset.width / 2)) + ', ' + (screen_y - 50) + ')');
 }
