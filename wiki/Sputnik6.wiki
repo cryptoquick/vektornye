@@ -1,8 +1,9 @@
 #summary Tasks and notes.
 
 = Tasks =
-  * Block selection & duplication
-  * Save block positions as voxels within the client
-  * Send voxels to the server, retrieve & render again
-  * Rotate voxel data with Sylvester
-  * Component consolidation; building an object (serverside) from voxels that will use an algorithm to build four isometric views of the voxel data as one consolidated component, while retaining component shading and colors
+  # Send block Field data to the server using XHR/RPC
+  # Split the main Drop() function into Create, Stack, and Move functions
+  # Retrive and render block Field data from the server
+  # Rotate block positions
+  # Text entry and input dialogs
+  # Component consolidation; building an object (serverside) from voxels that will use an algorithm to build four isometric views of the voxel data as one consolidated component, while retaining component shading and colors
